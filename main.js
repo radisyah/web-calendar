@@ -1,27 +1,13 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+import { db } from "./firebase-config.js";
 import {
-  getFirestore,
   collection,
   getDocs,
   addDoc,
   doc,
-  updateDoc,
   deleteDoc,
   getDoc,
 } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyCcq9Rc_0BKp6RpoAbkfS7mwVvtjbOnTys",
-  authDomain: "absensi-guru-mec.firebaseapp.com",
-  projectId: "absensi-guru-mec",
-  storageBucket: "absensi-guru-mec.firebasestorage.app",
-  messagingSenderId: "770590527737",
-  appId: "1:770590527737:web:855fcf73a2c28c2f5c5228",
-  measurementId: "G-FSPVJDV0DK",
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
 let calendar;
 let currentTeacherFilter = "";
 
@@ -57,6 +43,7 @@ function addWeeklyButton(calendar) {
 }
 
 document.addEventListener("DOMContentLoaded", async function () {
+  // Tampilkan loading saat inisialisasi kalender
   Swal.fire({
     title: "Loading Calendar...",
     text: "Please wait a moment",
@@ -66,53 +53,58 @@ document.addEventListener("DOMContentLoaded", async function () {
     },
   });
 
-  var calendarEl = document.getElementById("calendar");
+  // Inisialisasi kalender
+  const calendarEl = document.getElementById("calendar");
   calendar = new FullCalendar.Calendar(calendarEl, {
     initialView: "dayGridMonth",
+    locale: "en-US",
+    displayEventEnd: true, // ✅ Menampilkan tanggal akhir event
+
+    headerToolbar: {
+      left: "prev,next today",
+      center: "title",
+      right: "dayGridMonth,listWeek",
+    },
 
     eventClick: function (info) {
-      const teacher = info.event.title;
-      const branch = info.event.extendedProps.branch;
-      const dateStart = new Date(info.event.start);
-      const dateEnd = new Date(info.event.end);
-      const timeStart = info.event.extendedProps.timeStart;
-      const timeEnd = info.event.extendedProps.timeEnd;
-      const lesson = info.event.extendedProps.lesson;
+      const { title, start, extendedProps } = info.event;
+      const {
+        branch,
+        timeStart,
+        timeEnd,
+        lesson,
+        originalEnd, // ✅ Ambil tanggal akhir asli
+      } = extendedProps;
 
-      const formattedDateStart = dateStart.toLocaleDateString("id-ID", {
+      const formattedStart = new Date(start).toLocaleDateString("en-US", {
         day: "numeric",
         month: "long",
         year: "numeric",
       });
 
-      dateEnd.setDate(dateEnd.getDate() - 1);
-      const formattedDateEnd = dateEnd.toLocaleDateString("id-ID", {
+      const formattedEnd = new Date(
+        originalEnd || info.event.end
+      ).toLocaleDateString("en-US", {
         day: "numeric",
         month: "long",
         year: "numeric",
       });
 
       const dateDisplay =
-        formattedDateStart === formattedDateEnd
-          ? formattedDateStart
-          : `${formattedDateStart} - ${formattedDateEnd}`;
+        formattedStart === formattedEnd
+          ? formattedStart
+          : `${formattedStart} - ${formattedEnd}`;
 
       const message = `
-        <div style="font-size: 16px; line-height: 1.6; text-align: center;">
-          <div style="font-weight: bold; font-size: 18px; margin-bottom: 8px;">
-            ${teacher} - ${branch}
+          <div style="font-size: 16px; line-height: 1.6; text-align: center;">
+            <div style="font-weight: bold; font-size: 18px; margin-bottom: 8px;">
+              ${title} - ${branch}
+            </div>
+            <div style="margin-bottom: 6px;">${dateDisplay}</div>
+            <div>${timeStart} - ${timeEnd}</div>
+            <div>${lesson}</div>
           </div>
-          <div style="margin-bottom: 6px;">
-            ${dateDisplay}
-          </div>
-          <div>
-            ${timeStart} - ${timeEnd}
-          </div>
-          <div>
-            ${lesson}
-          </div>
-        </div>
-      `;
+        `;
 
       Swal.fire({
         title: "Schedule Detail",
@@ -120,54 +112,63 @@ document.addEventListener("DOMContentLoaded", async function () {
         confirmButtonText: "OK",
       });
     },
-    locale: "en",
-    headerToolbar: {
-      left: "prev,next today",
-      center: "title",
-      right: "dayGridMonth,listWeek",
-    },
+
     events: async function (fetchInfo, successCallback, failureCallback) {
-      let events = [];
-      const snapshot = await getDocs(collection(db, "events"));
-      snapshot.forEach((doc) => {
-        let event = doc.data();
-        if (currentTeacherFilter && event.teacher !== currentTeacherFilter)
-          return;
-        event.id = doc.id;
-        events.push({
-          id: event.id,
-          title: `${event.teacher}`,
-          timeStart: event.timeStart,
-          timeEnd: event.timeEnd,
-          lesson: event.lesson,
-          branch: event.branch,
-          start: event.start,
-          end: new Date(
-            new Date(event.end).setDate(new Date(event.end).getDate() + 1)
-          )
-            .toISOString()
-            .split("T")[0],
-          backgroundColor: colorMap[event.teacher] || "#D3D3D3",
+      try {
+        let events = [];
+        const snapshot = await getDocs(collection(db, "events"));
+
+        snapshot.forEach((doc) => {
+          const data = doc.data();
+          if (currentTeacherFilter && data.teacher !== currentTeacherFilter)
+            return;
+
+          events.push({
+            id: doc.id,
+            title: `${data.teacher}`,
+            timeStart: data.timeStart,
+            timeEnd: data.timeEnd,
+            lesson: data.lesson,
+            branch: data.branch,
+            originalEnd: data.end, // ✅ simpan nilai asli dari database
+            start: data.start,
+            end: new Date(
+              new Date(data.end).setDate(new Date(data.end).getDate() + 1)
+            )
+              .toISOString()
+              .split("T")[0],
+            backgroundColor: colorMap[data.teacher] || "#D3D3D3",
+          });
         });
-      });
-      events.sort((a, b) => {
-        const dateA = new Date(a.start);
-        const dateB = new Date(b.start);
-        if (dateA.getTime() === dateB.getTime()) {
-          return a.timeStart.localeCompare(b.timeStart);
-        }
-        return dateA - dateB;
-      });
-      successCallback(events);
+
+        // Sort event by date & time
+        events.sort((a, b) => {
+          const dateA = new Date(a.start);
+          const dateB = new Date(b.start);
+          if (dateA.getTime() === dateB.getTime()) {
+            return a.timeStart.localeCompare(b.timeStart);
+          }
+          return dateA - dateB;
+        });
+
+        successCallback(events);
+      } catch (error) {
+        console.error("Error loading events:", error);
+        failureCallback(error);
+        Swal.fire("Error", "Gagal memuat jadwal.", "error");
+      }
     },
+
     eventContent: function (arg) {
       const bgColor = colorMap[arg.event.title] || "#123456";
       return {
-        html: `<div class="calendar-event" style="background-color: ${bgColor}; padding: 2px; border-radius: 4px;">
-                  <strong>${arg.event.title} - ${arg.event.extendedProps.branch}</strong><br>
-                  <span> ${arg.event.extendedProps.timeStart} - ${arg.event.extendedProps.timeEnd} </span><br>
-                  <span>${arg.event.extendedProps.lesson}</span>
-               </div>`,
+        html: `
+            <div class="calendar-event" style="background-color: ${bgColor}; padding: 2px; border-radius: 4px;">
+              <strong>${arg.event.title} - ${arg.event.extendedProps.branch}</strong><br>
+              <span>${arg.event.extendedProps.timeStart} - ${arg.event.extendedProps.timeEnd}</span><br>
+              <span>${arg.event.extendedProps.lesson}</span>
+            </div>
+          `,
       };
     },
   });
@@ -176,56 +177,96 @@ document.addEventListener("DOMContentLoaded", async function () {
   calendar.render();
   addWeeklyButton(calendar);
   Swal.close();
-});
 
-document.addEventListener("DOMContentLoaded", function () {
-  document
-    .getElementById("addTeacherBtn")
-    .addEventListener("click", addTeacherField);
-});
+  // --- Interaksi tambahan ---
+  // Tombol tambah guru
+  const addTeacherBtn = document.getElementById("addTeacherBtn");
+  if (addTeacherBtn) {
+    addTeacherBtn.addEventListener("click", addTeacherField);
+  }
 
-document.addEventListener("DOMContentLoaded", function () {
-  document.getElementById("eventModal").style.display = "none";
-  document
-    .getElementById("addTeacherBtn")
-    .addEventListener("click", addTeacherField);
-});
+  // Sembunyikan modal di awal
+  const eventModal = document.getElementById("eventModal");
+  if (eventModal) {
+    eventModal.style.display = "none";
+  }
 
-document
-  .getElementById("eventStartDate")
-  .addEventListener("change", function () {
-    document.getElementById("eventEndDate").setAttribute("min", this.value);
-  });
+  // Tanggal end minimal mengikuti start
+  const startDateInput = document.getElementById("eventStartDate");
+  const endDateInput = document.getElementById("eventEndDate");
+  if (startDateInput && endDateInput) {
+    startDateInput.addEventListener("change", function () {
+      endDateInput.setAttribute("min", this.value);
+    });
+  }
 
-document
-  .getElementById("eventStartTime")
-  .addEventListener("change", function () {
-    let startTime = this.value;
-    let endTimeSelect = document.getElementById("eventEndTime");
+  // Filter timeEnd agar lebih besar dari timeStart
+  const startTimeInput = document.getElementById("eventStartTime");
+  const endTimeSelect = document.getElementById("eventEndTime");
 
-    let currentEndTime = endTimeSelect.value;
+  if (startTimeInput && endTimeSelect) {
+    startTimeInput.addEventListener("change", function () {
+      let startTime = this.value;
+      let currentEndTime = endTimeSelect.value;
 
-    let optionsHTML = `
-        <option value="">Select Time</option>
-        <option value="14.45">14.45</option>
-        <option value="16.30">16.30</option>
-        <option value="18.00">18.00</option>
-        <option value="19.45">19.45</option>
-    `;
-    endTimeSelect.innerHTML = optionsHTML;
+      let optionsHTML = `
+          <option value="">Select Time</option>
+          <option value="14.45">14.45</option>
+          <option value="16.30">16.30</option>
+          <option value="18.00">18.00</option>
+          <option value="19.45">19.45</option>
+        `;
+      endTimeSelect.innerHTML = optionsHTML;
 
-    let options = Array.from(endTimeSelect.options);
+      // Hapus opsi yang lebih kecil dari startTime
+      Array.from(endTimeSelect.options).forEach((option) => {
+        if (option.value && option.value <= startTime) {
+          option.remove();
+        }
+      });
 
-    options.forEach((option) => {
-      if (option.value && option.value <= startTime) {
-        option.remove();
+      if (currentEndTime && currentEndTime > startTime) {
+        endTimeSelect.value = currentEndTime;
       }
     });
+  }
+});
 
-    if (currentEndTime && currentEndTime > startTime) {
-      endTimeSelect.value = currentEndTime;
+const timeOptions = ["14.45", "16.30", "18.00", "19.45"];
+
+function filterEndTimeOptions(startTime, endTimeSelect) {
+  const currentEndTime = endTimeSelect.value;
+  let optionsHTML = `<option value="">Select Time</option>`;
+
+  timeOptions.forEach((time) => {
+    if (time > startTime) {
+      optionsHTML += `<option value="${time}">${time}</option>`;
     }
   });
+
+  endTimeSelect.innerHTML = optionsHTML;
+
+  if (currentEndTime && currentEndTime > startTime) {
+    endTimeSelect.value = currentEndTime;
+  }
+}
+
+const startDateInput = document.getElementById("eventStartDate");
+const endDateInput = document.getElementById("eventEndDate");
+const startTimeInput = document.getElementById("eventStartTime");
+const endTimeSelect = document.getElementById("eventEndTime");
+
+if (startDateInput && endDateInput) {
+  startDateInput.addEventListener("change", function () {
+    endDateInput.setAttribute("min", this.value);
+  });
+}
+
+if (startTimeInput && endTimeSelect) {
+  startTimeInput.addEventListener("change", function () {
+    filterEndTimeOptions(this.value, endTimeSelect);
+  });
+}
 
 // Tambahkan variabel global untuk pagination
 let currentPage = 1;
@@ -677,5 +718,5 @@ window.toggleOptions = function (id) {
 
 function formatDate(dateString) {
   const options = { year: "numeric", month: "long", day: "numeric" };
-  return new Date(dateString).toLocaleDateString("id-ID", options);
+  return new Date(dateString).toLocaleDateString("en-US", options);
 }
