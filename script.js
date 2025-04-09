@@ -44,7 +44,7 @@ if (filterTeacherSelect) {
 
 function addWeeklyButton(calendar) {
   const weeklyButton = document.createElement("button");
-  weeklyButton.innerText = "Week View";
+  weeklyButton.innerText = "week";
   weeklyButton.classList.add("fc-button", "fc-button-primary");
   weeklyButton.addEventListener("click", () => {
     calendar.changeView("timeGridWeek");
@@ -72,16 +72,31 @@ document.addEventListener("DOMContentLoaded", async function () {
     eventClick: function (info) {
       const teacher = info.event.title;
       const branch = info.event.extendedProps.branch;
-      const date = new Date(info.event.start);
+      const dateStart = new Date(info.event.start);
+      const dateEnd = new Date(info.event.end);
       const timeStart = info.event.extendedProps.timeStart;
       const timeEnd = info.event.extendedProps.timeEnd;
       const lesson = info.event.extendedProps.lesson;
 
-      const formattedDate = date.toLocaleDateString("id-ID", {
+      // Format tanggal dalam bahasa Indonesia
+      const formattedDateStart = dateStart.toLocaleDateString("id-ID", {
         day: "numeric",
         month: "long",
         year: "numeric",
       });
+
+      // Kurangi satu hari dari end karena FullCalendar menambahkan satu hari ekstra pada end
+      dateEnd.setDate(dateEnd.getDate() - 1);
+      const formattedDateEnd = dateEnd.toLocaleDateString("id-ID", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      });
+
+      const dateDisplay =
+        formattedDateStart === formattedDateEnd
+          ? formattedDateStart
+          : `${formattedDateStart} - ${formattedDateEnd}`;
 
       const message = `
         <div style="font-size: 16px; line-height: 1.6; text-align: center;">
@@ -89,7 +104,7 @@ document.addEventListener("DOMContentLoaded", async function () {
             ${teacher} - ${branch}
           </div>
           <div style="margin-bottom: 6px;">
-            ${formattedDate}
+            ${dateDisplay}
           </div>
           <div>
             ${timeStart} - ${timeEnd}
@@ -103,7 +118,6 @@ document.addEventListener("DOMContentLoaded", async function () {
       Swal.fire({
         title: "Schedule Detail",
         html: message,
-        // icon: "info",
         confirmButtonText: "OK",
       });
     },
