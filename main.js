@@ -20,6 +20,23 @@ const colorMap = {
   "MR DIMAS": "#A0522D",
 };
 
+function hideForUser() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const role = urlParams.get("role") || "admin"; // default admin jika tidak ada param
+
+  if (role === "user") {
+    // Sembunyikan tombol tambah jadwal (hanya saat awal halaman)
+    const addScheduleBtn = document.querySelector(
+      'button[onclick="showModal()"]'
+    );
+    if (addScheduleBtn) addScheduleBtn.remove();
+
+    // Sembunyikan icon settings (harus dipanggil setelah render)
+    const settingsIcons = document.querySelectorAll(".settings-icon");
+    settingsIcons.forEach((icon) => icon.remove());
+  }
+}
+
 const filterTeacherSelect = document.getElementById("filterTeacher");
 if (filterTeacherSelect) {
   filterTeacherSelect.addEventListener("change", (e) => {
@@ -56,12 +73,14 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   // Inisialisasi kalender
   const calendarEl = document.getElementById("calendar");
+  const urlParams = new URLSearchParams(window.location.search);
+  const role = urlParams.get("role") || "admin"; // default admin jika tidak ada param
+
   calendar = new FullCalendar.Calendar(calendarEl, {
     initialView: "dayGridMonth",
     locale: "en-US",
     displayEventEnd: true,
-    editable: true, // ✅ Aktifkan fitur drag & drop
-
+    editable: role === "admin",
     headerToolbar: {
       left: "prev,next today",
       center: "title",
@@ -142,15 +161,15 @@ document.addEventListener("DOMContentLoaded", async function () {
           : `${formattedStart} - ${formattedEnd}`;
 
       const message = `
-          <div style="font-size: 16px; line-height: 1.6; text-align: center;">
-            <div style="font-weight: bold; font-size: 18px; margin-bottom: 8px;">
-              ${title} - ${branch}
+            <div style="font-size: 16px; line-height: 1.6; text-align: center;">
+              <div style="font-weight: bold; font-size: 18px; margin-bottom: 8px;">
+                ${title} - ${branch}
+              </div>
+              <div style="margin-bottom: 6px;">${dateDisplay}</div>
+              <div>${timeStart} - ${timeEnd}</div>
+              <div>${lesson}</div>
             </div>
-            <div style="margin-bottom: 6px;">${dateDisplay}</div>
-            <div>${timeStart} - ${timeEnd}</div>
-            <div>${lesson}</div>
-          </div>
-        `;
+          `;
 
       Swal.fire({
         title: "Schedule Detail",
@@ -208,12 +227,12 @@ document.addEventListener("DOMContentLoaded", async function () {
       const bgColor = colorMap[arg.event.title] || "#123456";
       return {
         html: `
-            <div class="calendar-event" style="background-color: ${bgColor}; padding: 2px; border-radius: 4px;">
-              <strong>${arg.event.title} - ${arg.event.extendedProps.branch}</strong><br>
-              <span>${arg.event.extendedProps.timeStart} - ${arg.event.extendedProps.timeEnd}</span><br>
-              <span>${arg.event.extendedProps.lesson}</span>
-            </div>
-          `,
+              <div class="calendar-event" style="background-color: ${bgColor}; padding: 2px; border-radius: 4px;">
+                <strong>${arg.event.title} - ${arg.event.extendedProps.branch}</strong><br>
+                <span>${arg.event.extendedProps.timeStart} - ${arg.event.extendedProps.timeEnd}</span><br>
+                <span>${arg.event.extendedProps.lesson}</span>
+              </div>
+            `,
       };
     },
   });
@@ -251,12 +270,12 @@ document.addEventListener("DOMContentLoaded", async function () {
       let currentEndTime = endTimeSelect.value;
 
       let optionsHTML = `
-          <option value="">Select Time</option>
-          <option value="14.45">14.45</option>
-          <option value="16.30">16.30</option>
-          <option value="18.00">18.00</option>
-          <option value="19.45">19.45</option>
-        `;
+            <option value="">Select Time</option>
+            <option value="14.45">14.45</option>
+            <option value="16.30">16.30</option>
+            <option value="18.00">18.00</option>
+            <option value="19.45">19.45</option>
+          `;
       endTimeSelect.innerHTML = optionsHTML;
 
       Array.from(endTimeSelect.options).forEach((option) => {
@@ -320,27 +339,31 @@ if (startTimeInput && endTimeSelect) {
 let currentPage = 1;
 const eventsPerPage = 4;
 
+// Bersihkan dan load event list dari Firestore
 async function loadEvents() {
   const eventList = document.getElementById("eventList");
-  if (eventList) eventList.innerHTML = "";
+  if (!eventList) return;
+  eventList.innerHTML = "";
+
   const snapshot = await getDocs(collection(db, "events"));
-  let events = [];
+  const events = [];
+
   snapshot.forEach((doc) => {
-    let event = doc.data();
+    const event = doc.data();
     if (currentTeacherFilter && event.teacher !== currentTeacherFilter) return;
     event.id = doc.id;
     events.push(event);
   });
+
   events.sort((a, b) => {
     const startA = new Date(a.start);
     const startB = new Date(b.start);
     if (startA.getTime() === startB.getTime()) {
       const endA = new Date(a.end);
       const endB = new Date(b.end);
-      if (endA.getTime() === endB.getTime()) {
-        return a.timeStart.localeCompare(b.timeStart);
-      }
-      return endA - endB;
+      return endA.getTime() === endB.getTime()
+        ? a.timeStart.localeCompare(b.timeStart)
+        : endA - endB;
     }
     return startA - startB;
   });
@@ -348,56 +371,58 @@ async function loadEvents() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // Pagination: hitung batas awal dan akhir halaman
   const startIndex = (currentPage - 1) * eventsPerPage;
-  const endIndex = startIndex + eventsPerPage;
-  const paginatedEvents = events.slice(startIndex, endIndex);
+  const paginatedEvents = events.slice(startIndex, startIndex + eventsPerPage);
 
   paginatedEvents.forEach((event) => {
-    let li = document.createElement("li");
-    li.classList.add("event-item");
+    const li = createEventElement(event, today);
 
-    const endDate = new Date(event.end);
-    endDate.setHours(0, 0, 0, 0);
-
-    if (endDate < today) {
-      li.style.backgroundColor = "#c01a51";
-    }
-    li.innerHTML = `
-        <div class="event-details">
-          <span class="event-teacher">${event.teacher.toUpperCase()} - ${event.branch.toUpperCase()}</span>
-          <span class="event-date"> ${
-            event.start === event.end
-              ? formatDate(event.start)
-              : formatDate(event.start) + " - " + formatDate(event.end)
-          }</span>
-          <span class="event-time">${event.timeStart} - ${
-      event.timeEnd
-    }   </span>
-          <span class="event-lesson">${event.lesson}</span>
-
-        </div> 
-        <span class="settings-icon" style="cursor: pointer;" onclick="toggleOptions('${
-          event.id
-        }')">⚙️</span>
-        <div id="options-${
-          event.id
-        }" class="event-options" style="display: none;">
-          <button onclick="editEvent('${event.id}', '${event.teacher}', '${
-      event.lesson
-    }', '${event.branch}', '${event.start}', '${event.end}', '${
-      event.timeStart
-    }', '${event.timeEnd}')">Edit</button>
-          <button onclick="duplicateEvent('${event.id}')">Dup</button>
-          <button onclick="deleteEvent('${event.id}')">Delete</button>
-        </div>`;
     eventList.appendChild(li);
+    hideForUser();
   });
 
   renderPagination(events.length);
-  if (calendar) {
-    calendar.refetchEvents();
-  }
+  calendar?.refetchEvents();
+}
+
+function createEventElement(event, today) {
+  const li = document.createElement("li");
+  li.className = "event-item";
+
+  const endDate = new Date(event.end);
+  endDate.setHours(0, 0, 0, 0);
+  if (endDate < today) li.style.backgroundColor = "#c01a51";
+
+  li.innerHTML = `
+      <div class="event-details">
+        <span class="event-teacher">${event.teacher.toUpperCase()} - ${event.branch.toUpperCase()}</span>
+        <span class="event-date">
+          ${
+            event.start === event.end
+              ? formatDate(event.start)
+              : `${formatDate(event.start)} - ${formatDate(event.end)}`
+          }
+        </span>
+        <span class="event-time">${event.timeStart} - ${event.timeEnd}</span>
+        <span class="event-lesson">${event.lesson}</span>
+      </div>
+      <span class="settings-icon" style="cursor: pointer;" onclick="toggleOptions('${
+        event.id
+      }')">⚙️</span>
+      <div id="options-${
+        event.id
+      }" class="event-options" style="display: none;">
+        <button onclick="editEvent('${event.id}', '${event.teacher}', '${
+    event.lesson
+  }', '${event.branch}', '${event.start}', '${event.end}', '${
+    event.timeStart
+  }', '${event.timeEnd}')">Edit</button>
+        <button onclick="duplicateEvent('${event.id}')">Dup</button>
+        <button onclick="deleteEvent('${event.id}')">Delete</button>
+      </div>
+    `;
+
+  return li;
 }
 
 // Tambahkan fungsi duplicateEvent dengan loading
@@ -673,16 +698,16 @@ window.editEvent = function (
   // Reset container dan isi ulang satu teacher
   const teacherContainer = document.getElementById("teacherContainer");
   teacherContainer.innerHTML = `
-    <label>Teachers:</label>
-    <select class="eventTeacher" required>
-      <option value="">Select Teacher</option>
-      <option value="MS DAHLIA">MS DAHLIA</option>
-      <option value="MS ARDELYA">MS ARDELYA</option>
-      <option value="MS SAFA">MS SAFA</option>
-      <option value="MS MELLY">MS MELLY</option>
-      <option value="MR DIMAS">MR DIMAS</option>
-    </select>
-  `;
+      <label>Teachers:</label>
+      <select class="eventTeacher" required>
+        <option value="">Select Teacher</option>
+        <option value="MS DAHLIA">MS DAHLIA</option>
+        <option value="MS ARDELYA">MS ARDELYA</option>
+        <option value="MS SAFA">MS SAFA</option>
+        <option value="MS MELLY">MS MELLY</option>
+        <option value="MR DIMAS">MR DIMAS</option>
+      </select>
+    `;
   teacherContainer.querySelector("select").value = teacher;
 
   document.getElementById("eventLesson").value = lesson;
