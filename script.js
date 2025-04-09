@@ -69,6 +69,44 @@ document.addEventListener("DOMContentLoaded", async function () {
   var calendarEl = document.getElementById("calendar");
   calendar = new FullCalendar.Calendar(calendarEl, {
     initialView: "dayGridMonth",
+    eventClick: function (info) {
+      const teacher = info.event.title;
+      const branch = info.event.extendedProps.branch;
+      const date = new Date(info.event.start);
+      const timeStart = info.event.extendedProps.timeStart;
+      const timeEnd = info.event.extendedProps.timeEnd;
+      const lesson = info.event.extendedProps.lesson;
+
+      const formattedDate = date.toLocaleDateString("id-ID", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      });
+
+      const message = `
+        <div style="font-size: 16px; line-height: 1.6; text-align: center;">
+          <div style="font-weight: bold; font-size: 18px; margin-bottom: 8px;">
+            ${teacher} - ${branch}
+          </div>
+          <div style="margin-bottom: 6px;">
+            ${formattedDate}
+          </div>
+          <div>
+            ${timeStart} - ${timeEnd}
+          </div>
+          <div>
+            ${lesson}
+          </div>
+        </div>
+      `;
+
+      Swal.fire({
+        title: "Schedule Detail",
+        html: message,
+        // icon: "info",
+        confirmButtonText: "OK",
+      });
+    },
     locale: "en",
     headerToolbar: {
       left: "prev,next today",
