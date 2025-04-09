@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Calendar Multi Schedule</title>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales-all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script type="module" src="script.js"></script>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h2>Teacher Schedules Management</h2>
+
+      <div class="add-event">
+        <button type="button" onclick="showModal()">+ Add Schedule</button>
+        <label for="filterTeacher">Filter by Teacher:</label>
+        <select id="filterTeacher">
+          <option value="">All</option>
+          <option value="MS DAHLIA">MS DAHLIA</option>
+          <option value="MS ARDELYA">MS ARDELYA</option>
+          <option value="MS SAFA">MS SAFA</option>
+          <option value="MS MELLY">MS MELLY</option>
+          <option value="MR DIMAS">MR DIMAS</option>
+        </select>
+      </div>
+
+      <ul id="eventList"></ul>
+      <div id="pagination" class="pagination"></div>
+      <div id="eventModal" class="modal">
+        <div class="modal-content">
+          <h3>Add New Schedule</h3>
+          <form class="add-event" id="eventForm">
+            <div id="teacherContainer">
+              <label>Teachers:</label>
+              <select class="eventTeacher" required>
+                <option value="">Select Teacher</option>
+                <option value="MS DAHLIA">MS DAHLIA</option>
+                <option value="MS ARDELYA">MS ARDELYA</option>
+                <option value="MS SAFA">MS SAFA</option>
+                <option value="MS MELLY">MS MELLY</option>
+                <option value="MR DIMAS">MR DIMAS</option>
+              </select>
+            </div>
+
+            <!-- Tombol Tambah Teacher -->
+            <button type="button" id="addTeacherBtn">
+              + Add teacher if having the same schedule
+            </button>
+
+            <input
+              required
+              placeholder="Description"
+              for="eventLesson"
+              id="eventLesson"
+              type="text"
+            />
+
+            <label for="eventBranch">Branchs:</label>
+            <select id="eventBranch" required>
+              <option value="">Select Branch</option>
+              <option value="MEC KGM">MEC KGM</option>
+              <option value="MEC KLT">MEC KLT</option>
+            </select>
+
+            <label for="eventStartDate">Starts:</label>
+            <div class="input-container">
+              <input
+                class="input-subcontainer"
+                type="date"
+                class="input-subcontainer"
+                id="eventStartDate"
+                required
+              />
+              <select class="input-subcontainer" id="eventStartTime" required>
+                <option value="">Select Time</option>
+                <option value="14.45">14.45</option>
+                <option value="16.30">16.30</option>
+                <option value="18.00">18.00</option>
+                <option value="19.45">19.45</option>
+              </select>
+            </div>
+
+            <label for="eventEndDate">Ends:</label>
+            <div class="input-container">
+              <input
+                class="input-subcontainer"
+                type="date"
+                id="eventEndDate"
+                required
+              />
+              <select class="input-subcontainer" id="eventEndTime" required>
+                <option value="">Select Time</option>
+                <option value="14.45">14.45</option>
+                <option value="16.30">16.30</option>
+                <option value="18.00">18.00</option>
+                <option value="19.45">19.45</option>
+              </select>
+            </div>
+            <button type="button" id="saveButton" onclick="saveEvent()">
+              Save
+            </button>
+            <button type="button" class="close" onclick="closeModal()">
+              Cancel
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      <h2>Schedule Calendar</h2>
+      <div id="calendar"></div>
+    </div>
+  </body>
+</html>

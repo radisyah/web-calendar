@@ -1,0 +1,311 @@
+body {
+  font-family: "Arial", sans-serif;
+  background-color: #181818;
+  color: #ffffff;
+  margin: 0;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.swal2-container {
+  z-index: 99999 !important;
+}
+
+.container {
+  background: #222;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+  width: 100%;
+  max-width: 700px;
+  margin-bottom: 20px;
+}
+
+h2 {
+  text-align: center;
+  color: #00bcd4;
+  text-transform: uppercase;
+}
+
+input,
+select {
+  padding: 10px;
+  border: 1px solid white;
+  border-radius: 5px;
+  font-size: 16px;
+  background: #333;
+  color: white;
+}
+
+button {
+  padding: 12px;
+  background: #00bcd4;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.close {
+  background: #e91e63;
+}
+
+.close:hover {
+  background: #c01a51;
+}
+
+.add-event {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 9999;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
+.modal-content {
+  background-color: #333;
+  margin: 5% auto;
+  padding: 20px;
+  border-radius: 10px;
+  width: 80%;
+  max-width: 600px;
+  position: relative;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.input-container {
+  width: 100%;
+  display: flex;
+  /* background-color: #bbbbbb; */
+}
+
+/* Untuk mengubah warna ikon kalender di browser berbasis WebKit (Chrome, Edge, Safari) */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1); /* Membalik warna ikon jadi putih */
+  cursor: pointer;
+  color: #ffffff;
+}
+
+.input-subcontainer {
+  width: 48%;
+  margin-left: 5px;
+}
+
+button:hover {
+  background: #008ba3;
+}
+
+ul {
+  list-style: none;
+  padding: 0;
+}
+
+li {
+  background: #333;
+  padding: 10px;
+  margin: 5px 0;
+  border-radius: 5px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+li button {
+  background: #e91e63;
+  padding: 5px 10px;
+  font-size: 14px;
+}
+
+li button:hover {
+  background: #ff0004;
+}
+
+.event-details {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.event-teacher {
+  font-size: 18px;
+  font-weight: bold;
+  color: #ffffff;
+}
+
+.event-lesson {
+  font-weight: bold;
+  font-size: 14px;
+  color: #ffffff;
+}
+
+.event-branch,
+.event-date,
+.event-time {
+  font-size: 14px;
+  color: #bbbbbb;
+}
+
+.event-options {
+  margin-top: 5px;
+  display: flex;
+  gap: 10px;
+}
+
+.settings-icon {
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.calendar-event {
+  padding: 5px !important;
+  font-size: 12px;
+  overflow: hidden; /* make sure it hides the content that overflows */
+  white-space: nowrap; /* don't break the line */
+  text-overflow: ellipsis; /* give the beautiful '...' effect */
+}
+
+.pagination {
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+.page-button {
+  padding: 4px 10px;
+  background-color: #333;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+.page-button.active,
+.page-button:hover {
+  background-color: #00bcd4;
+  color: #fff;
+}
+
+#teacherContainer select {
+  display: inline-block;
+  margin-bottom: 10px;
+  margin-top: 10px;
+  padding: 5px;
+  width: 100%;
+}
+
+/* Calendar event styling */
+
+.fc .fc-event {
+  padding: 2px 4px !important;
+  font-size: 13px;
+  border: none;
+  background-color: #333;
+  color: white;
+  margin: 2px 0 !important;
+}
+
+.fc-list-event .calendar-event {
+  white-space: normal !important;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.fc .fc-list {
+  color: #333;
+}
+
+/* Grid cell padding */
+.fc .fc-daygrid-day-frame {
+  padding: 2px !important;
+}
+
+/* Make calendar tighter overall */
+.fc .fc-daygrid-day {
+  padding: 4px !important;
+}
+
+/* Header styling */
+.fc .fc-toolbar-title {
+  font-size: 1.2rem !important;
+}
+
+.fc .fc-toolbar {
+  margin-bottom: 8px !important;
+}
+
+.fc .fc-button {
+  padding: 4px 8px !important;
+  font-size: 13px !important;
+  border-radius: 4px !important;
+}
+
+/* Remove excess spacing between rows */
+.fc .fc-daygrid-body-natural {
+  row-gap: 2px !important;
+}
+
+/* Style untuk scrollbar di seluruh halaman */
+::-webkit-scrollbar {
+  width: 3px; /* Lebar scrollbar */
+  height: 3px; /* Tinggi scrollbar horizontal */
+}
+
+/* Warna track scrollbar */
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+/* Warna handle scrollbar */
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 10px;
+}
+
+/* Warna handle scrollbar ketika di-hover */
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(55, 55, 55);
+}
+
+/* Scrollbar khusus dalam kalender */
+#calendar {
+  overflow: auto; /* Memastikan scrollbar muncul jika diperlukan */
+}
+
+#calendar::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+#calendar::-webkit-scrollbar-thumb {
+  background: #555;
+  border-radius: 6px;
+}
+
+#calendar::-webkit-scrollbar-track {
+  background: #ddd;
+  border-radius: 6px;
+}
