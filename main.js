@@ -58,7 +58,8 @@ document.addEventListener("DOMContentLoaded", async function () {
   calendar = new FullCalendar.Calendar(calendarEl, {
     initialView: "dayGridMonth",
     locale: "en-US",
-    displayEventEnd: true, // ✅ Menampilkan tanggal akhir event
+    displayEventEnd: true,
+    editable: true, // ✅ Aktifkan fitur drag & drop
 
     headerToolbar: {
       left: "prev,next today",
@@ -68,13 +69,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     eventClick: function (info) {
       const { title, start, extendedProps } = info.event;
-      const {
-        branch,
-        timeStart,
-        timeEnd,
-        lesson,
-        originalEnd, // ✅ Ambil tanggal akhir asli
-      } = extendedProps;
+      const { branch, timeStart, timeEnd, lesson, originalEnd } = extendedProps;
 
       const formattedStart = new Date(start).toLocaleDateString("en-US", {
         day: "numeric",
@@ -130,7 +125,7 @@ document.addEventListener("DOMContentLoaded", async function () {
             timeEnd: data.timeEnd,
             lesson: data.lesson,
             branch: data.branch,
-            originalEnd: data.end, // ✅ simpan nilai asli dari database
+            originalEnd: data.end,
             start: data.start,
             end: new Date(
               new Date(data.end).setDate(new Date(data.end).getDate() + 1)
@@ -141,7 +136,6 @@ document.addEventListener("DOMContentLoaded", async function () {
           });
         });
 
-        // Sort event by date & time
         events.sort((a, b) => {
           const dateA = new Date(a.start);
           const dateB = new Date(b.start);
