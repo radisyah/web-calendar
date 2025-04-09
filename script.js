@@ -69,6 +69,7 @@ document.addEventListener("DOMContentLoaded", async function () {
   var calendarEl = document.getElementById("calendar");
   calendar = new FullCalendar.Calendar(calendarEl, {
     initialView: "dayGridMonth",
+
     eventClick: function (info) {
       const teacher = info.event.title;
       const branch = info.event.extendedProps.branch;
@@ -78,14 +79,12 @@ document.addEventListener("DOMContentLoaded", async function () {
       const timeEnd = info.event.extendedProps.timeEnd;
       const lesson = info.event.extendedProps.lesson;
 
-      // Format tanggal dalam bahasa Indonesia
       const formattedDateStart = dateStart.toLocaleDateString("id-ID", {
         day: "numeric",
         month: "long",
         year: "numeric",
       });
 
-      // Kurangi satu hari dari end karena FullCalendar menambahkan satu hari ekstra pada end
       dateEnd.setDate(dateEnd.getDate() - 1);
       const formattedDateEnd = dateEnd.toLocaleDateString("id-ID", {
         day: "numeric",
@@ -125,7 +124,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     headerToolbar: {
       left: "prev,next today",
       center: "title",
-      right: "dayGridMonth,listWeek", // Hapus timeGridWeek dan timeGridDay
+      right: "dayGridMonth,listWeek",
     },
     events: async function (fetchInfo, successCallback, failureCallback) {
       let events = [];
@@ -175,7 +174,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   await loadEvents();
   calendar.render();
-  addWeeklyButton(calendar); // Masih bisa pakai tombol mingguan versi custom
+  addWeeklyButton(calendar);
   Swal.close();
 });
 
