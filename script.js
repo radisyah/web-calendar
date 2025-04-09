@@ -73,7 +73,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     headerToolbar: {
       left: "prev,next today",
       center: "title",
-      right: "dayGridMonth,timeGridWeek,timeGridDay,listWeek",
+      right: "dayGridMonth,listWeek", // Hapus timeGridWeek dan timeGridDay
     },
     events: async function (fetchInfo, successCallback, failureCallback) {
       let events = [];
@@ -123,7 +123,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   await loadEvents();
   calendar.render();
-  addWeeklyButton(calendar);
+  addWeeklyButton(calendar); // Masih bisa pakai tombol mingguan versi custom
   Swal.close();
 });
 
