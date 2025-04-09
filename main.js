@@ -6,6 +6,7 @@ import {
   doc,
   deleteDoc,
   getDoc,
+  updateDoc,
 } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
 let calendar;
@@ -65,6 +66,56 @@ document.addEventListener("DOMContentLoaded", async function () {
       left: "prev,next today",
       center: "title",
       right: "dayGridMonth,listWeek",
+    },
+
+    eventDrop: async function (info) {
+      const { event } = info;
+
+      try {
+        const visualStart = event.start;
+        const visualEnd = event.end;
+        const oneDay = 24 * 60 * 60 * 1000;
+
+        let updatedStart, updatedEnd;
+
+        // Hitung durasi visual event
+        const visualDuration = visualEnd
+          ? visualEnd.getTime() - visualStart.getTime()
+          : 0;
+
+        if (!visualEnd || visualDuration <= oneDay) {
+          // ✅ Event hanya 1 hari → koreksi end - 1 hari lalu set start = end
+          const correctedEnd = new Date(visualEnd.getTime() - 1);
+          updatedEnd = correctedEnd.toISOString().split("T")[0];
+          updatedStart = updatedEnd;
+        } else {
+          // ✅ Multi-day event → koreksi end dengan -1 hari
+          updatedStart = event.start.toISOString().split("T")[0];
+          const correctedEnd = new Date(event.end.getTime() - 1);
+          updatedEnd = correctedEnd.toISOString().split("T")[0];
+
+          const rawStart = new Date(event.start.getTime() + oneDay);
+          updatedStart = rawStart.toISOString().split("T")[0];
+        }
+
+        await updateEventDate(event.id, updatedStart, updatedEnd);
+
+        event.setExtendedProp("originalEnd", updatedEnd);
+
+        Swal.fire({
+          icon: "success",
+          title: "Schedule Updated",
+          text: "The event date has been updated successfully.",
+          timer: 1500,
+          showConfirmButton: false,
+        }).then(() => {
+          window.location.reload();
+        });
+      } catch (error) {
+        console.error("Failed to update event:", error);
+        Swal.fire("Error", "Could not update event.", "error");
+        info.revert();
+      }
     },
 
     eventClick: function (info) {
@@ -173,19 +224,16 @@ document.addEventListener("DOMContentLoaded", async function () {
   Swal.close();
 
   // --- Interaksi tambahan ---
-  // Tombol tambah guru
   const addTeacherBtn = document.getElementById("addTeacherBtn");
   if (addTeacherBtn) {
     addTeacherBtn.addEventListener("click", addTeacherField);
   }
 
-  // Sembunyikan modal di awal
   const eventModal = document.getElementById("eventModal");
   if (eventModal) {
     eventModal.style.display = "none";
   }
 
-  // Tanggal end minimal mengikuti start
   const startDateInput = document.getElementById("eventStartDate");
   const endDateInput = document.getElementById("eventEndDate");
   if (startDateInput && endDateInput) {
@@ -194,7 +242,6 @@ document.addEventListener("DOMContentLoaded", async function () {
     });
   }
 
-  // Filter timeEnd agar lebih besar dari timeStart
   const startTimeInput = document.getElementById("eventStartTime");
   const endTimeSelect = document.getElementById("eventEndTime");
 
@@ -212,7 +259,6 @@ document.addEventListener("DOMContentLoaded", async function () {
         `;
       endTimeSelect.innerHTML = optionsHTML;
 
-      // Hapus opsi yang lebih kecil dari startTime
       Array.from(endTimeSelect.options).forEach((option) => {
         if (option.value && option.value <= startTime) {
           option.remove();
@@ -225,6 +271,14 @@ document.addEventListener("DOMContentLoaded", async function () {
     });
   }
 });
+
+async function updateEventDate(id, start, end) {
+  const eventRef = doc(db, "events", id);
+  await updateDoc(eventRef, {
+    start: start,
+    end: end,
+  });
+}
 
 const timeOptions = ["14.45", "16.30", "18.00", "19.45"];
 
