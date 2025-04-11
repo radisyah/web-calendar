@@ -255,9 +255,20 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   const startDateInput = document.getElementById("eventStartDate");
   const endDateInput = document.getElementById("eventEndDate");
+
   if (startDateInput && endDateInput) {
+    endDateInput.addEventListener("change", function () {
+      if (startDateInput.value && this.value < startDateInput.value) {
+        startDateInput.value = this.value; // Atur tanggal awal sama dengan tanggal akhir
+      }
+      startDateInput.setAttribute("max", this.value); // Batasi tanggal awal
+    });
+
     startDateInput.addEventListener("change", function () {
-      endDateInput.setAttribute("min", this.value);
+      if (endDateInput.value && this.value > endDateInput.value) {
+        endDateInput.value = this.value; // Atur tanggal akhir sama dengan tanggal awal
+      }
+      endDateInput.setAttribute("min", this.value); // Batasi tanggal akhir
     });
   }
 
