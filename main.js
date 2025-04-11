@@ -618,7 +618,6 @@ window.saveEvent = async function () {
 
   if (
     teachers.length > 0 &&
-    lesson &&
     branch &&
     startDate &&
     startTime &&
@@ -644,7 +643,7 @@ window.saveEvent = async function () {
     for (let teacher of teachers) {
       await addDoc(collection(db, "events"), {
         teacher,
-        lesson,
+        lesson: lesson || "", // Lesson sekarang opsional
         branch,
         start: startDate,
         end: endDate,
@@ -678,7 +677,7 @@ window.saveEvent = async function () {
   } else {
     Swal.fire({
       title: "Error!",
-      text: "Please fill in all the data!",
+      text: "Please fill in all the required data!", //ubah pesan error
       icon: "error",
       confirmButtonText: "OK",
     });
